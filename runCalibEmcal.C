@@ -1,9 +1,11 @@
+#!/usr/bin/gawk {system("root -b -q " FILENAME); exit;}
+
 void runCalibEmcal(void)
 {
 	gROOT->ProcessLine(".include $ROOTSYS/include");
 	gROOT->ProcessLine(".include $ALICE_ROOT/include");
 
-	// load base root libraries
+	// Load base root libraries
 	gSystem->Load("libTree");
 	gSystem->Load("libGeom");
 	gSystem->Load("libVMC");
@@ -12,10 +14,9 @@ void runCalibEmcal(void)
 	gSystem->Load("libESD");
 	gSystem->Load("libAOD");
 
-	// load analysis framework libraries
+	// Load analysis framework libraries
 	gSystem->Load("libANALYSIS");
 	gSystem->Load("libANALYSISalice");
-
 	gSystem->Load("libEMCALUtils");
 	gSystem->Load("libPWGPPEMCAL");
 
@@ -23,16 +24,20 @@ void runCalibEmcal(void)
 
 	AliAnalysisManager *mgr = new AliAnalysisManager();
 
-	gROOT->Macro("$ALICE_ROOT/ANALYSIS/macros/train/AddESDHandler.C");
+	gROOT->Macro("$ALICE_ROOT/ANALYSIS/macros/train/"
+				 "AddESDHandler.C");
 
-	AliAnalysisAlien *plugin = new AliAnalysisAlien("pluginCalibEmcal");
+	AliAnalysisAlien *plugin =
+		new AliAnalysisAlien("pluginCalibEmcal");
 
-	// plugin->AddIncludePath("-I. -I$ROOTSYS/include -I$ALICE_ROOT -I$ALICE_ROOT/include -I$ALICE_PHYSICS/include");
+	// plugin->AddIncludePath("-I. -I$ROOTSYS/include -I$ALICE_ROOT "
+	// "-I$ALICE_ROOT/include -I$ALICE_PHYSICS/include");
 
 	plugin->SetGridWorkingDir("workdir");
 	plugin->SetGridOutputDir("outputdir");
 	plugin->SetAliPhysicsVersion("v5-08-12-01-1");
-	plugin->SetAdditionalLibs("AliAnalysisTaskCalibEmcal.h AliAnalysisTaskCalibEmcal.cxx");
+	plugin->SetAdditionalLibs("AliAnalysisTaskCalibEmcal.h "
+							  "AliAnalysisTaskCalibEmcal.cxx");
 	plugin->SetAnalysisSource("AliAnalysisTaskCalibEmcal.cxx");
 	plugin->SetGridDataDir("/alice/data/2015/LHC15j");
 	plugin->SetDataPattern("muon_calo_pass1/*/AliESDs.root");
@@ -41,6 +46,8 @@ void runCalibEmcal(void)
 	int run_number[] = {
 
 236892,
+#if 0
+
 236893,
 236965,
 236967,
@@ -265,6 +272,7 @@ void runCalibEmcal(void)
 238621,
 238622,
 
+#endif
 -1 };
 
 	for (int *r = run_number; *r != -1; r++) {
@@ -272,15 +280,8 @@ void runCalibEmcal(void)
 	}
 
 	plugin->SetRunMode("terminate");
-
 	mgr->SetGridHandler(plugin);
-
-	fprintf(stderr, "%s:%d:\n", __FILE__, __LINE__);
-
 	gROOT->Macro("macros/AddAliAnalysisTaskCalibEmcal.C");
-
-	fprintf(stderr, "%s:%d:\n", __FILE__, __LINE__);
-
 	if (mgr->InitAnalysis()) {
 		mgr->StartAnalysis("grid");
 	}
