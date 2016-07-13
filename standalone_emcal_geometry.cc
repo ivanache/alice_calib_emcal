@@ -1,6 +1,8 @@
 #include <cstdio>
 
-void to_sm_ieta_iphi_eta_phi(unsigned int &sm, unsigned int &ieta, unsigned int &iphi, double &eta, double &phi, unsigned int n)
+void to_sm_ieta_iphi_eta_phi(unsigned int &sm, unsigned int &ieta,
+							 unsigned int &iphi, double &eta,
+							 double &phi, unsigned int n)
 {
 	sm = n < 11520 ? n / 1152 :
 		n < 12288 ? 10 + (n - 11520) / 384 :
@@ -13,11 +15,11 @@ void to_sm_ieta_iphi_eta_phi(unsigned int &sm, unsigned int &ieta, unsigned int 
 		sm < 18 ? 12288 + (sm - 12) * 768 :
 		16896 + (sm - 18) * 384;
 	const unsigned int n1 = n - n0;
-	const unsigned int neta =
+	const unsigned int nphi =
 		sm < 10 ? 24 : sm < 12 ? 8 : sm < 18 ? 24 : 8;
 
-	ieta = 2 * (n1 / (2 * neta)) + 1 - (n1 % 2);
-	iphi = (n1 / 2) % neta;
+	ieta = 2 * (n1 / (2 * nphi)) + 1 - (n1 % 2);
+	iphi = (n1 / 2) % nphi;
 
 	const double coeff_eta[20][2] = {
 		{0.65846, -0.0138514},

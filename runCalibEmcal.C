@@ -1,6 +1,6 @@
 #!/usr/bin/gawk {system("root -b -q " FILENAME); exit;}
 
-void runCalibEmcal(void)
+void runCalibEmcal(const char *run_mode = "full")
 {
 	gROOT->ProcessLine(".include $ROOTSYS/include");
 	gROOT->ProcessLine(".include $ALICE_ROOT/include");
@@ -36,8 +36,12 @@ void runCalibEmcal(void)
 	plugin->SetGridWorkingDir("workdir");
 	plugin->SetGridOutputDir("outputdir");
 	plugin->SetAliPhysicsVersion("v5-08-12-01-1");
-	plugin->SetAdditionalLibs("AliAnalysisTaskCalibEmcal.h "
-							  "AliAnalysisTaskCalibEmcal.cxx");
+	plugin->SetAdditionalLibs(
+		"AliAnalysisTaskCalibEmcal.h "
+		"AliAnalysisTaskCalibEmcal.cxx "
+		"multiplyPi0CalibrationFactors_TextToHisto_"
+		"EMCALcoeffs2012pizOnlyNoEspectra_"
+		"DCALandThirdsAllOne.root");
 	plugin->SetAnalysisSource("AliAnalysisTaskCalibEmcal.cxx");
 	plugin->SetGridDataDir("/alice/data/2015/LHC15j");
 	plugin->SetDataPattern("muon_calo_pass1/*/AliESDs.root");
@@ -45,9 +49,8 @@ void runCalibEmcal(void)
 
 	int run_number[] = {
 
-236892,
 #if 0
-
+236892,
 236893,
 236965,
 236967,
@@ -67,7 +70,9 @@ void runCalibEmcal(void)
 237061,
 237104,
 237106,
+#endif
 237109,
+#if 0
 237111,
 237112,
 237115,
@@ -279,7 +284,7 @@ void runCalibEmcal(void)
 		plugin->AddRunNumber(*r);
 	}
 
-	plugin->SetRunMode("terminate");
+	plugin->SetRunMode(run_mode);
 	mgr->SetGridHandler(plugin);
 	gROOT->Macro("macros/AddAliAnalysisTaskCalibEmcal.C");
 	if (mgr->InitAnalysis()) {

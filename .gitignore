@@ -1,7 +1,7 @@
 *.d
 *.so
-*.xml
 *~
+000*.xml
 ROOTMERGE-*.root
 analysis.jdl
 analysis.root
@@ -9,3 +9,4 @@ analysis.sh
 analysis_validation.sh
 myAnalysis.C
 outputs_valid
+wn.xml
