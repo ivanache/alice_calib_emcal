@@ -1,4 +1,5 @@
 #include <cstdio>
+#include <cstdlib>
 
 void to_sm_ieta_iphi_eta_phi(unsigned int &sm, unsigned int &ieta,
 							 unsigned int &iphi, double &eta,
@@ -6,7 +7,7 @@ void to_sm_ieta_iphi_eta_phi(unsigned int &sm, unsigned int &ieta,
 {
 	sm = n < 11520 ? n / 1152 :
 		n < 12288 ? 10 + (n - 11520) / 384 :
-		n < 16897 ? 12 + (n - 12288) / 768 :
+		n < 16896 ? 12 + (n - 12288) / 768 :
 		18 + (n - 16896) / 384;
 
 	const unsigned int n0 =
@@ -163,7 +164,13 @@ int main(void)
 				index_azimuth, iphi,
 				index_pseudorapidity, ieta,
 				pseudorapidity, eta, azimuth, phi);
+		if (!(index_azimuth == iphi && index_azimuth == iphi &&
+			  index_pseudorapidity == ieta)) {
+			exit(1);
+		}
 	}
 
 	fclose(fp);
+
+	return 0;
 }
