@@ -69,7 +69,7 @@ AliAnalysisTaskCalibEmcal::AliAnalysisTaskCalibEmcal(void)
 	  _reco_utils(new AliEMCALRecoUtils),
 	  _emcal_geometry(NULL),
 	  _emcal_pi0_calibration_factor(),
-	  _ncell(17632),
+	  _ncell(17664),
 	  _timing_min(300), _timing_max(800) // 560-610 ns in Run-1
 {
 }
@@ -87,7 +87,7 @@ AliAnalysisTaskCalibEmcal::AliAnalysisTaskCalibEmcal(const char *name)
 	  _reco_utils(new AliEMCALRecoUtils),
 	  _emcal_geometry(NULL),
 	  _emcal_pi0_calibration_factor(),
-	  _ncell(17632),
+	  _ncell(17664),
 	  _timing_min(300), _timing_max(800) // 560-610 ns in Run-1
 {
 	DefineOutput(1, TList::Class());
@@ -204,7 +204,7 @@ void AliAnalysisTaskCalibEmcal::UserExec(Option_t *option)
 			AliEMCALGeometry::GetInstance(_emcal_geometry_name);
 	}
 
-#if 0
+#if 1
 	if (_emcal_geometry != NULL) {
 		for (size_t i = 0; i < _ncell; i++) {
 			_emcal_geometry->PrintCellIndexes(i, 1, "");
