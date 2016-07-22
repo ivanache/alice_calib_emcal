@@ -1,6 +1,8 @@
 #!/usr/bin/gawk {system("root -b -q " FILENAME); exit;}
+// -*- mode: c++; -*-
 
-void runCalibEmcal(const char *run_mode = "full")
+void runCalibEmcal(const char *run_mode = "full",
+				   const int lhc_run = 1)
 {
 	gROOT->ProcessLine(".include $ROOTSYS/include");
 	gROOT->ProcessLine(".include $ALICE_ROOT/include");
@@ -35,253 +37,66 @@ void runCalibEmcal(const char *run_mode = "full")
 
 	plugin->SetGridWorkingDir("workdir");
 	plugin->SetGridOutputDir("outputdir");
-	plugin->SetAliPhysicsVersion("v5-08-12-01-1");
+	plugin->SetAliPhysicsVersion("v5-08-14-01-1");
 	plugin->SetAdditionalLibs(
 		"AliAnalysisTaskCalibEmcal.h "
-		"AliAnalysisTaskCalibEmcal.cxx "
-		"multiplyPi0CalibrationFactors_TextToHisto_"
-		"EMCALcoeffs2012pizOnlyNoEspectra_"
-		"DCALandThirdsAllOne.root");
+		"AliAnalysisTaskCalibEmcal.cxx");
 	plugin->SetAnalysisSource("AliAnalysisTaskCalibEmcal.cxx");
-	plugin->SetGridDataDir("/alice/data/2015/LHC15j");
-	plugin->SetDataPattern("muon_calo_pass1/*/AliESDs.root");
 	plugin->SetRunPrefix("000");
 
-	int run_number[] = {
+	const int run_number_lhc12b[] = {
 
-#if 0
-236892,
-236893,
-236965,
-236967,
-236968,
-236969,
-236970,
-236972,
-236973,
-237001,
-237003,
-237029,
-237030,
-237049,
-237050,
-237051,
-237056,
-237061,
-237104,
-237106,
-#endif
-237109,
-#if 0
-237111,
-237112,
-237115,
-237119,
-237174,
-237178,
-237180,
-237244,
-237245,
-237251,
-237253,
-237255,
-237257,
-237259,
-237286,
-237287,
-237288,
-237289,
-237291,
-237330,
-237334,
-237335,
-237336,
-237339,
-237340,
-237342,
-237346,
-237350,
-237351,
-237355,
-237356,
-237358,
-237360,
-237362,
-237364,
-237365,
-237366,
-237368,
-237372,
-237388,
-237391,
-237392,
-237393,
-237394,
-237396,
-237397,
-237400,
-237401,
-237406,
-237408,
-237409,
-237502,
-237504,
-237505,
-237507,
-237511,
-237512,
-237513,
-237515,
-237516,
-237645,
-237646,
-237670,
-237671,
-237673,
-237675,
-237676,
-237678,
-237681,
-237684,
-237686,
-237691,
-237698,
-237699,
-237700,
-237701,
-237703,
-237704,
-237705,
-237706,
-237707,
-237708,
-237709,
-237710,
-237711,
-237712,
-237713,
-237765,
-237766,
-237768,
-237773,
-237777,
-237778,
-237779,
-237780,
-237781,
-237782,
-237787,
-237788,
-237789,
-237790,
-237791,
-237792,
-237793,
-237794,
-237795,
-237796,
-237805,
-237806,
-237842,
-237843,
-237844,
-237845,
-237846,
-237847,
-237945,
-237948,
-237969,
-237971,
-237972,
-237974,
-237978,
-237979,
-237981,
-237982,
-237983,
-238073,
-238091,
-238097,
-238129,
-238130,
-238131,
-238132,
-238133,
-238136,
-238139,
-238140,
-238142,
-238143,
-238144,
-238145,
-238146,
-238147,
-238148,
-238154,
-238159,
-238160,
-238161,
-238164,
-238170,
-238176,
-238179,
-238184,
-238185,
-238186,
-238187,
-238188,
-238395,
-238396,
-238397,
-238398,
-238399,
-238400,
-238429,
-238430,
-238431,
-238432,
-238451,
-238454,
-238455,
-238456,
-238457,
-238458,
-238459,
-238460,
-238466,
-238468,
-238469,
-238470,
-238472,
-238474,
-238570,
-238571,
-238576,
-238578,
-238579,
-238582,
-238583,
-238587,
-238594,
-238595,
-238598,
-238603,
-238604,
-238605,
-238606,
-238607,
-238610,
-238611,
-238614,
-238615,
-238621,
-238622,
+		177580, 177592, 177597, 177601, 177624, 177681, 177798,
+		177799, 177804, 177805, 177810, 177858, 177860, 177861,
+		177864, 177869, 177932, 177938, 177942, 178018, 178024,
+		178025, 178026, 178028, 178029, 178030, 178031, 178052,
+		178053, 178163, 178167, 178220,
 
-#endif
--1 };
+		-1
+	};
 
-	for (int *r = run_number; *r != -1; r++) {
+	const int run_number_lhc15j[] = {
+
+		236967, 236970, 237003, 237030, 237050, 237106, 237109,
+		237119, 237178, 237257, 237287, 237511, 237513, 237516,
+		237646, 237673, 237686, 237700, 237701, 237703, 237704,
+		237709, 237712, 237766, 237773, 237778, 237781, 237788,
+		237792, 237794, 237805, 237843, 237846,
+
+		-1
+	};
+
+	const int *run_number;
+
+	switch (lhc_run) {
+	case 1:
+		plugin->SetGridDataDir("/alice/data/2012/LHC12b");
+		plugin->SetDataPattern("pass1/*/AliESDs.root");
+		run_number = run_number_lhc12b;
+		break;
+	case 2:
+		plugin->SetGridDataDir("/alice/data/2015/LHC15j");
+		plugin->SetDataPattern("muon_calo_pass1/*/AliESDs.root");
+		run_number = run_number_lhc15j;
+		break;
+	}
+
+	for (const int *r = run_number; *r != -1; r++) {
 		plugin->AddRunNumber(*r);
+	}
+
+	const char *alien_close_se = gSystem->Getenv("alien_CLOSE_SE");
+
+	if (alien_close_se != NULL) {
+		const char *file = mgr->GetCommonFileName();
+
+		plugin->SetDefaultOutputs(kFALSE);
+		plugin->SetOutputFiles(Form(
+			"%s@%s", file, alien_close_se));
+		plugin->SetOutputArchive(Form(
+			"log_archive.zip:stdout,stderr@%s "
+			"root_archive.zip:%s,*.stat@%s",
+			alien_close_se, file, alien_close_se));
 	}
 
 	plugin->SetRunMode(run_mode);
