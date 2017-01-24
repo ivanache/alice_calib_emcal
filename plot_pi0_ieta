@@ -1,0 +1,6 @@
+#!/bin/bash
+
+if [[ -f "$1" ]]; then
+    echo 'TH2D*h2=(TH2D*)(AliAnalysisTaskCalibEmcal->Get("histogram")->FindObject("_histogram_sm_ieta_pi0_mass"));h2->GetXaxis()->SetTitle("\\mathrm{SM}\\otimes\\mathrm{i\\upeta}");h2->GetYaxis()->SetTitle("m_{\\gamma\\gamma}\\:(\\mathrm{GeV}/c^2)");h2->Draw("colz");gApplication->Run();' | root -l "$1"
+    #echo 'TH2D*h2=(TH2D*)(AliAnalysisTaskCalibEmcal->Get("histogram")->FindObject("_histogram_sm_ieta_pi0_mass_recal"));h2->GetYaxis()->SetTitle("m_{\\gamma\\gamma}\\:(\\mathrm{GeV}/c^2)");h2->ProjectionY()->Draw("e1x0");gApplication->Run();' | root -l "$1"
+fi

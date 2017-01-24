@@ -1,0 +1,20 @@
+#!/bin/bash
+
+prepend=""
+el="0.5"
+eh="1.5"
+el="1.5"
+eh="5"
+if [[ -f "$1" ]]; then
+    echo 'TH2D*h2=(TH2D*)(AliAnalysisTaskCalibEmcal->Get("histogram")->FindObject("_histogram_cell_id_amplitude_high_mult"));TH1D*h2y=h2->ProjectionX("_px",h2->GetYaxis()->FindBin('"$el"'),h2->GetYaxis()->FindBin('"$eh"'));FILE*fp=fopen("_tmp.txt","w");for(int i=0;i<h2->GetNbinsX();i++)fprintf(fp,"%d %g\n",i,h2y->GetBinContent(i+1));fclose(fp);gSystem->Exit(0);' | root -b "$1"
+    shift
+    prepend="$prepend _tmp.txt"
+fi
+if [[ -f "$1" ]]; then
+    echo 'TH2D*h2=(TH2D*)(AliAnalysisTaskCalibEmcal->Get("histogram")->FindObject("_histogram_cell_id_amplitude_low_mult"));TH1D*h2y=h2->ProjectionX("_px",h2->GetYaxis()->FindBin('"$el"'),h2->GetYaxis()->FindBin('"$eh"'));FILE*fp=fopen("_tmp2.txt","w");for(int i=0;i<h2->GetNbinsX();i++)fprintf(fp,"%d %g\n",i,h2y->GetBinContent(i+1));fclose(fp);gSystem->Exit(0);' | root -b "$1"
+    shift
+    prepend="$prepend _tmp2.txt"
+fi
+set -- $prepend "$@"
+#echo 'TH2D*h2h=(TH2D*)(AliAnalysisTaskCalibEmcal->Get("histogram")->FindObject("_histogram_cell_id_amplitude_high_mult"));TH2D*h2l=(TH2D*)(AliAnalysisTaskCalibEmcal->Get("histogram")->FindObject("_histogram_cell_id_amplitude_low_mult"));TH2D*h2=new TH2D(*h2h);h2->Divide(h2h,h2l);TH1D*h2y=h2->ProjectionX("_px",h2->GetYaxis()->FindBin(1.5),h2->GetYaxis()->FindBin(5));FILE*fp=fopen("_tmp.txt","w");for(int i=0;i<h2->GetNbinsX();i++)fprintf(fp,"%d %g\n",i,h2y->GetBinContent(i+1));fclose(fp);gSystem->Exit(0);' | root -b "$1"
+/usr/bin/python $(dirname "$0")/paint_emcal.py "$@"

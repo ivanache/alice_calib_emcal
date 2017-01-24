@@ -1,0 +1,5 @@
+#!/bin/bash
+
+if [[ -f "$1" ]]; then
+    echo 'TH2D*h2=(TH2D*)(AliAnalysisTaskCalibEmcal->Get("histogram")->FindObject("_histogram_pi0_e_geom_mean_dr"));h2->GetXaxis()->SetTitle("\\sqrt{E_1E_2}\\:(\\mathrm{GeV})");h2->GetYaxis()->SetTitle("\\Delta R");TF1*f=new TF1("f","acos(1-[0]^2/(2*x^2))",0.676009,8);f->SetParameter(0,0.1349766);h2->GetListOfFunctions()->Add(f);h2->Draw("colz");c1->SetLogx();gApplication->Run();' | root -l "$1"
+fi

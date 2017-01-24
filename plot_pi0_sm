@@ -1,0 +1,28 @@
+#!/bin/bash
+
+if [[ -f "$1" ]]; then
+    for sm in $(seq 12 19); do
+	o="$(basename $(dirname "$1"))_sm${sm}.C"
+	case "$sm" in
+	    [0-9])
+		f=$(($sm * 1152 + 1))
+		l=$((($sm + 1) * 1152))
+		;;
+	    1[01])
+		f=$((11520 + $sm * 384 + 1))
+		l=$((11520 + ($sm + 1) * 384))
+		;;
+	    1[2-7])
+		f=$((12288 + ($sm - 12) * 768 + 1))
+		l=$((12288 + ($sm - 11) * 768))
+		;;
+	    1[89])
+		f=$((16896 + ($sm - 18) * 384 + 1))
+		l=$((16896 + ($sm - 17) * 384))
+		;;
+	esac
+#	echo 'gStyle->SetOptFit();TH2D*h2m=(TH2D*)(AliAnalysisTaskCalibEmcal->Get("histogram")->FindObject("_histogram_sm_ieta_pi0_mass_mixed"));TH1D*h2my=h2m->ProjectionY("_py",'"$f"','"$l"');TH2D*h2=(TH2D*)(AliAnalysisTaskCalibEmcal->Get("histogram")->FindObject("_histogram_sm_ieta_pi0_mass"));h2->GetYaxis()->SetTitle("m_{\\gamma\\gamma}\\:(\\mathrm{GeV}/c^2)");TH1D*h2y=h2->ProjectionY("_py",'"$f"','"$l"');h2y->Add(h2my,-1);h2y->GetYaxis()->SetTitle("Count");TF1*f=new TF1("f","gaus",0.14-0.03,0.14+0.03);h2y->Fit(f,"r");h2y->SetMinimum(0);h2y->Draw("e1x0");c1->SaveAs("'"$o"'");' | root -b "$1"
+#	echo 'gStyle->SetOptFit();TH2D*h2=(TH2D*)(AliAnalysisTaskCalibEmcal->Get("histogram")->FindObject("_histogram_sm_ieta_pi0_mass_recal"));h2->GetYaxis()->SetTitle("m_{\\gamma\\gamma}\\:(\\mathrm{GeV}/c^2)");TH1D*h2y=h2->ProjectionY("_py",'"$f"','"$l"');h2y->GetYaxis()->SetTitle("Count");TF1*f=new TF1("f","gaus",0.14-0.03,0.14+0.03);h2y->SetMinimum(0);h2y->SetMarkerStyle(20);h2y->SetLineColor(kBlack);TH2D*h2r=(TH2D*)(AliAnalysisTaskCalibEmcal->Get("histogram")->FindObject("_histogram_sm_ieta_pi0_mass"));h2r->GetYaxis()->SetTitle("m_{\\gamma\\gamma}\\:(\\mathrm{GeV}/c^2)");TH1D*h2ry=h2r->ProjectionY("_py",'"$f"','"$l"');h2ry->SetMarkerStyle(25);h2ry->SetLineColor(kBlack);h2y->Fit(f,"r");h2y->Draw("e1x0");h2ry->Draw("e1x0same");c1->SaveAs("'"$o"'");' | root -b "$1"
+	echo 'gStyle->SetOptFit();TH2D*h2=(TH2D*)(AliAnalysisTaskCalibEmcal->Get("histogram")->FindObject("_histogram_cell_id_pi0_mass_recal"));h2->GetYaxis()->SetTitle("m_{\\gamma\\gamma}\\:(\\mathrm{GeV}/c^2)");bool good_cell[17664];memset(good_cell,0,sizeof(good_cell));unsigned int cell_id,bad_timing,bad_mine;double scale;FILE *fp=fopen("calib_data.txt","r");while(fscanf(fp,"%u%u%u%lf",&cell_id,&bad_timing,&bad_mine,&scale)==4){if(!(bad_timing||bad_mine))good_cell[cell_id]=1;}fclose(fp);TH1D*h2y=new TH1D(*(h2->ProjectionY("_py",0,0)));for(unsigned int i='"$f"';i<='"$l"';i++){if(good_cell[i-1]){TH1D*t=h2->ProjectionY("_py",i,i);printf("%d\n",i);h2y->Add(t);}}h2y->GetYaxis()->SetTitle("Count");TF1*f=new TF1("f","gaus",0.14-0.03,0.14+0.03);h2y->SetMinimum(0);h2y->SetMarkerStyle(20);h2y->SetLineColor(kBlack);TH2D*h2r=(TH2D*)(AliAnalysisTaskCalibEmcal->Get("histogram")->FindObject("_histogram_cell_id_pi0_mass"));h2r->GetYaxis()->SetTitle("m_{\\gamma\\gamma}\\:(\\mathrm{GeV}/c^2)");TH1D*h2ry=new TH1D(*(h2r->ProjectionY("_py",0,0)));for(unsigned int i='"$f"';i<='"$l"';i++){if(good_cell[i-1]){TH1D*t=h2r->ProjectionY("_py",i,i);printf("%d %d\n",t->GetEntries(),h2ry->GetEntries());h2ry->Add(t);}}h2ry->SetMarkerStyle(25);h2ry->SetLineColor(kBlack);h2y->Fit(f,"r");h2y->Draw("e1x0");h2ry->Draw("e1x0same");c1->SaveAs("'"$o"'");' | root -b "$1"
+    done
+fi

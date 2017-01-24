@@ -1,0 +1,56 @@
+#!/bin/bash
+
+if [[ -f "$1" ]]; then
+    for sm in $(seq 0 19); do
+	o="$(basename $(dirname "$1"))_sm${sm}.eps"
+	case "$sm" in
+	    [0-9]|1[01])
+		f=$(($sm * 48 + 1))
+		l=$((($sm + 1) * 48))
+		;;
+	    1[2-7])
+		f=$((576 + ($sm - 12) * 32 + 1))
+		l=$((576 + ($sm - 11) * 32))
+		;;
+	    1[89])
+		f=$((768 + ($sm - 18) * 48 + 1))
+		l=$((768 + ($sm - 17) * 48))
+		;;
+	esac
+	echo '{
+gStyle->SetOptFit();
+TH2D*h2=(TH2D*)(AliAnalysisTaskCalibEmcal->Get("histogram")->FindObject("_histogram_sm_ieta_pi0_mass"));
+h2->GetYaxis()->SetTitle("m_{\\gamma\\gamma}\\:(\\mathrm{GeV}/c^2)");
+TH1D*h2y0=new TH1D(*(h2->ProjectionY("_py",0,0)));
+TH1D*h2y1=new TH1D(*(h2->ProjectionY("_py",0,0)));
+for(unsigned int i='"$f"';i<='"$l"';i++){
+TH1D*t=h2->ProjectionY("_py",i,i);
+if((i-1)%2==0){
+h2y0->Add(t);
+}
+else{
+h2y1->Add(t);
+}
+}
+h2y0->GetYaxis()->SetTitle("Count");
+h2y1->GetYaxis()->SetTitle("Count");
+TF1*f0=new TF1("f0","gaus",0.14-0.04,0.14+0.04);
+TF1*f1=new TF1("f0","gaus",0.14-0.04,0.14+0.04);
+h2y0->Fit(f0,"rl");
+h2y1->Fit(f1,"rl");
+h2y0->SetMarkerStyle(20);
+h2y1->SetMarkerStyle(25);
+if('$sm'%2==0){
+h2y1->GetXaxis()->SetRangeUser(0.14-0.04,0.14+0.06);
+h2y1->Draw("e1x0");
+h2y0->Draw("e1x0same");
+}
+else{
+h2y0->GetXaxis()->SetRangeUser(0.14-0.04,0.14+0.06);
+h2y0->Draw("e1x0");
+h2y1->Draw("e1x0same");
+}
+c1->SaveAs("'"$o"'");
+}' | root -b "$1"
+    done
+fi

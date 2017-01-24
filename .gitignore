@@ -1,7 +1,12 @@
 *.d
+*.eps
+*.pdf
+*.png
+*.pyc
 *.so
 *~
 000*.xml
+AutoDict_*_.cxx
 ROOTMERGE-*.root
 analysis.jdl
 analysis.root

@@ -1,0 +1,10 @@
+#!/bin/bash
+
+alien_macro="runCalibEmcal.C"
+if grep -q terminate "$alien_macro"; then
+    echo "error: $alien_macro is in mode \`terminate'"
+    exit 1
+fi
+
+alien_kill $(alien_ps -b | \
+    sed "/[^ ] [0-9]/!d;s/.*[^ ] \\([0-9]\\)/\\1/;s/ .*//")

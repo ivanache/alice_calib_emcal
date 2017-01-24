@@ -1,0 +1,6 @@
+#!/bin/bash
+
+#12288
+if [[ -f "$1" ]]; then
+    echo 'TH2D*h2=(TH2D*)(AliAnalysisTaskCalibEmcal->Get("histogram")->FindObject("_histogram_cell_id_amplitude"));bool good_cell[17664];memset(good_cell,0,sizeof(good_cell));unsigned int cell_id,bad_timing,bad_mine;double scale;FILE *fp=fopen("calib_data.txt","r");while(fscanf(fp,"%u%u%u%lf",&cell_id,&bad_timing,&bad_mine,&scale)==4){if(!(bad_timing||bad_mine))good_cell[cell_id]=1;}fclose(fp);TH1D*h2y=h2->ProjectionY("_py",0,0);for(unsigned int i=12288;i<17664;i++){if(good_cell[i]){TH1D*t=h2->ProjectionY("_py",i+1,i+1);printf("%d\n",i);h2y->Add(t);break;}}h2y->Rebin(1);TCanvas *c1=new TCanvas("canvas0","",1280+4,960+28);c1->SetLogx();c1->SetLogy();TF1*f=new TF1("f","[0]*x^[1]",1.5,5);h2y->Fit(f,"r");h2y->SetXTitle("E^\\mathrm{cell}\\:(\\mathrm{GeV})");h2y->SetYTitle("\\mathrm{Count}");h2y->Draw("e1x0");gApplication->Run();' | root -l "$1"
+fi

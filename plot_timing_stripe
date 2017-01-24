@@ -1,0 +1,61 @@
+#!/bin/bash
+
+if [[ -f "$1" ]]; then
+    for sm in $(seq 0 19); do
+	o="$(basename $(dirname "$1"))_sm${sm}_ratio.png"
+	case "$sm" in
+	    [0-9])
+		f=$(($sm * 1152 + 1))
+		l=$((($sm + 1) * 1152))
+		;;
+	    1[01])
+		f=$((11520 + $sm * 384 + 1))
+		l=$((11520 + ($sm + 1) * 384))
+		;;
+	    1[2-7])
+		f=$((12288 + ($sm - 12) * 768 + 1))
+		l=$((12288 + ($sm - 11) * 768))
+		;;
+	    1[89])
+		f=$((16896 + ($sm - 18) * 384 + 1))
+		l=$((16896 + ($sm - 17) * 384))
+		;;
+	esac
+	echo '{
+gStyle->SetOptFit();
+TH2D*h2=(TH2D*)(AliAnalysisTaskCalibEmcal->Get("histogram")->FindObject("_histogram_cell_id_timing"));
+h2->GetYaxis()->SetTitle("Timing (ns)");
+TH1D*h2y0=new TH1D(*(h2->ProjectionY("_py",0,0)));
+TH1D*h2y1=new TH1D(*(h2->ProjectionY("_py",0,0)));
+h2y0->Sumw2();
+h2y1->Sumw2();
+for(unsigned int i='"$f"';i<='"$l"';i++){
+TH1D*t=h2->ProjectionY("_py",i,i);
+t->Sumw2();
+if((i-1)%2==0){
+h2y0->Add(t);
+}
+else{
+h2y1->Add(t);
+}
+}
+h2y0->GetYaxis()->SetTitle("Count");
+h2y1->GetYaxis()->SetTitle("Count");
+h2y0->SetMarkerStyle(20);
+h2y1->SetMarkerStyle(25);
+if('$sm'%2==0){
+h2y1->GetXaxis()->SetRangeUser(400,900);
+h2y1->Divide(h2y1,h2y0);
+h2y1->Draw("e1x0");
+//h2y0->Draw("e1x0same");
+}
+else{
+h2y0->GetXaxis()->SetRangeUser(400,900);
+h2y0->Divide(h2y0,h2y1);
+h2y0->Draw("e1x0");
+//h2y1->Draw("e1x0same");
+}
+c1->SaveAs("'"$o"'");
+}' | root -b "$1"
+    done
+fi

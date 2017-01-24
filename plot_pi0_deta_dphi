@@ -1,0 +1,5 @@
+#!/bin/bash
+
+if [[ -f "$1" ]]; then
+    echo 'TH2D*h2=(TH2D*)(AliAnalysisTaskCalibEmcal->Get("histogram")->FindObject("_histogram_pi0_deta_dphi_ieta_even"));h2->GetXaxis()->SetRangeUser(-0.45,0.45);h2->GetYaxis()->SetRangeUser(-0.45,0.45);h2->GetXaxis()->SetTitle("\\Delta\\eta");h2->GetYaxis()->SetTitle("\\Delta\\phi");h2->Draw("colz");gApplication->Run();' | root -l "$1"
+fi

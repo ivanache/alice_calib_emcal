@@ -1,0 +1,7 @@
+#!/bin/bash
+
+if [[ -f "$1" ]]; then
+    echo 'TH2D*h2=(TH2D*)(AliAnalysisTaskCalibEmcal->Get("histogram")->FindObject("_histogram_pi0_correlated_cell_id_e"));TH1D*h2y=h2->ProjectionX("_px",h2->GetYaxis()->FindBin(0),h2->GetYaxis()->FindBin(9));FILE*fp=fopen("_tmp.txt","w");for(int i=0;i<h2->GetNbinsX();i++)fprintf(fp,"%d %g\n",i,h2y->GetBinContent(i+1));fclose(fp);gSystem->Exit(0);' | root -b "$1"
+    #echo 'TH2D*h2=(TH2D*)(AliAnalysisTaskCalibEmcal->Get("histogram")->FindObject("_histogram_pi0_cell_id_mass"));TH1D*h2y=h2->ProjectionX("_px",h2->GetYaxis()->FindBin(0),h2->GetYaxis()->FindBin(9));FILE*fp=fopen("_tmp.txt","w");for(int i=0;i<h2->GetNbinsX();i++)fprintf(fp,"%d %g\n",i,h2y->GetBinContent(i+1));fclose(fp);gSystem->Exit(0);' | root -b "$1"
+    /usr/bin/python $(dirname "$0")/paint_emcal.py _tmp.txt
+fi
