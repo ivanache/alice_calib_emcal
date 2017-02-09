@@ -1,18 +1,24 @@
 #!/usr/bin/env python
 
+if __name__ != '__main__':
+    import math, array, ROOT
+
 def set_root_style():
     ROOT.gROOT.SetStyle("Plain")
     ROOT.gStyle.SetCanvasColor(ROOT.kWhite)
     ROOT.gStyle.SetCanvasBorderMode(0)
     ROOT.gStyle.SetPadBorderMode(0)
     ROOT.gStyle.SetOptStat(0)
+    ROOT.gStyle.SetNumberContours(253)
+    ROOT.gStyle.SetPalette(55, ROOT.nullptr)
 
 def multipanel_pad(canvas, pad_layout_unscaled, margin = None):
     pad = []
+    pad_layout = pad_layout_unscaled
     for i in range(2):
         s = sum(pad_layout_unscaled[i])
         for j in range(len(pad_layout_unscaled[i])):
-            pad_layout[i][j] = pad_layout_unscaled[i][j] / s
+            pad_layout[i][j] /= s
     pad_layout_1_reversed = list(reversed(pad_layout[1]))
     if margin == None:
         left_margin = canvas.GetLeftMargin()
@@ -68,7 +74,9 @@ def to_sm_ieta_iphi(n):
     iphi = (n1 / 2) % nphi;
     return sm, ieta, iphi
 
-def to_eta_phi(sm, ieta, iphi):
+def to_eta_phi(sm, ieta, iphi, ieta_int = None):
+    if ieta_int == None:
+        ieta_int = round(ieta)
     coeff_eta = [
         [ 0.6538761263736301, 0.0012502455282809458,
           -0.00005435850122961024, -0.013757648176291852,
@@ -173,8 +181,8 @@ def to_eta_phi(sm, ieta, iphi):
         [ -0.67811388888889, -0.0006451388888908697,
           0.01336691468254001, 0.000053670634921005446 ] ]
 
-    if abs(ieta - round(ieta) >= 0.25):
-        ieta_mod_2 = 0.5
+    if abs(ieta - round(ieta)) >= 0.25:
+        ieta_mod_2 = ieta_int % 2
     else:
         ieta_mod_2 = ieta % 2
     eta = coeff_eta[sm][0] + coeff_eta[sm][1] * iphi + \
@@ -189,7 +197,36 @@ def to_eta_phi(sm, ieta, iphi):
         phi += 2 * math.pi
     return eta, phi
 
-def update(canvas, pad, root_histogram, root_histogram_index = 0):
+def alice_emcal_canvas_pad(application_name, canvas_width = 1680):
+    left_margin = 0.03125 * 1.5
+    right_margin = 0.03125 * 2.1875
+    top_margin = 0.03125 * 1.5
+    bottom_margin = 0.03125 * 2.75
+    azimuth_range = [(-1.85, -0.5), (1.3, 3.35)]
+    pseudorapidity_range = (-0.8, 0.8)
+    pad_layout = (map(lambda r: abs(r[1] - r[0]), azimuth_range),
+                  [1.0])
+    canvas_height = canvas_width * \
+                    (1 - left_margin - right_margin) / \
+                    sum(pad_layout[0]) * \
+                    abs(pseudorapidity_range[1] -
+                        pseudorapidity_range[0]) / \
+                    (1 - top_margin - bottom_margin)
+    canvas = ROOT.TCanvas(
+        'canvas%d' % 0, application_name,
+        canvas_width + 4, int(round(canvas_height)) + 28)
+    canvas.SetLeftMargin(left_margin)
+    canvas.SetRightMargin(right_margin)
+    canvas.SetTopMargin(top_margin)
+    canvas.SetBottomMargin(bottom_margin)
+    return canvas, multipanel_pad(canvas, pad_layout)
+
+def update(canvas, pad, root_histogram, root_histogram_index = 0,
+           outline = False, text_size_sm = 0.03125 * 0.875,
+           offset_sm = 3.5, text_size_ieta_iphi = 0.03125 * 0.625,
+           offset_ieta_iphi = (0.5, 1),
+           azimuth_range = ((-1.85, -0.5), (1.3, 3.35)),
+           pseudorapidity_range = (-0.8, 0.8)):
     list_index = None
     try:
         index_list = (i for i, v in enumerate(root_histogram)
@@ -199,92 +236,183 @@ def update(canvas, pad, root_histogram, root_histogram_index = 0):
     if list_index != None:
         del root_histogram[list_index:]
     root_histogram.append([])
-    azimuth_range = [(-1.85, -0.5), (1.3, 3.35)]
+    scale_y = []
     for i in range(2):
         root_histogram[-1].append(ROOT.TH2D(
             'root_histogram%d_%d' %
             (len(root_histogram), len(root_histogram[-1])), '',
             1, azimuth_range[i][0], azimuth_range[i][1],
-            1, -0.75, 0.75))
+            1, pseudorapidity_range[0], pseudorapidity_range[1]))
+        scale_y.append(
+            (1 - pad[i].GetTopMargin() - pad[i].GetBottomMargin()) *
+             pad[i].GetHNDC() * canvas.GetWh() /
+             ((1 - pad[i].GetLeftMargin() - pad[i].GetRightMargin()) *
+              pad[i].GetWNDC() * canvas.GetWw()))
         if i == 0:
             root_histogram[-1][-1].GetXaxis().SetLabelFont(42)
             root_histogram[-1][-1].GetYaxis().SetLabelFont(42)
             root_histogram[-1][-1].GetYaxis().SetTitle('\\eta')
+            root_histogram[-1][-1].GetYaxis().SetTitleOffset(
+                1.125 * scale_y[i])
         elif i == 1:
-            root_histogram[-1][-1].Fill(0, 0, -1)
+            root_histogram[-1][-1].Fill(0, 0, -1e-12)
             root_histogram[-1][-1].GetXaxis().SetLabelFont(42)
             root_histogram[-1][-1].GetXaxis().SetTitle('\\varphi')
             root_histogram[-1][-1].GetYaxis().SetLabelSize(0)
             root_histogram[-1][-1].GetZaxis().SetLabelFont(42)
-        root_histogram[-1][-1].SetMinimum(
-            root_histogram[root_histogram_index].GetMinimum())
-        root_histogram[-1][-1].SetMaximum(
-            root_histogram[root_histogram_index].GetMaximum())
-        root_histogram[-1][-1].GetZaxis().SetRangeUser(
-            root_histogram[root_histogram_index].GetMinimum(),
-            root_histogram[root_histogram_index].GetMaximum())
+        root_histogram[-1][-1].GetYaxis().SetTickLength(
+            root_histogram[-1][-1].GetYaxis().GetTickLength() *
+            scale_y[-1])
+        root_histogram[-1][-1].GetZaxis().SetTickLength(
+            root_histogram[-1][-1].GetZaxis().GetTickLength() *
+            scale_y[-1])
+        u0 = root_histogram[root_histogram_index].GetMinimum()
+        u1 = root_histogram[root_histogram_index].GetMaximum()
+        u1 = u0 + (1 + 1e-3) * (u1 - u0)
+        #u0, u1 = 200, 1000
+        root_histogram[-1][-1].SetMinimum(u0)
+        root_histogram[-1][-1].SetMaximum(u1)
+        root_histogram[-1][-1].GetZaxis().SetRangeUser(u0, u1)
     root_histogram.append([])
     ncell = 17664
     ncell_emcal = 12288
     pad[1].cd()
     root_histogram[-2][1].Draw('colz')
     pad[1].Update()
-    root_histogram[-2][1].GetListOfFunctions().\
-        FindObject('palette').SetX2NDC(0.9125)
+    palette = root_histogram[-2][1].GetListOfFunctions().FindObject(
+        'palette')
+    if palette != None:
+        palette.SetX2NDC(
+            palette.GetX1NDC() + scale_y[1] *
+            (palette.GetX2NDC() - palette.GetX1NDC()))
+    pad_index = 1
     for i in range(ncell):
         if i == ncell_emcal:
+            root_histogram[-2][1].Draw('zsame')
             pad[0].cd()
             root_histogram[-2][0].Draw('colz')
             pad[0].Update()
+            pad_index = 0
+        content = root_histogram[root_histogram_index].\
+                  GetBinContent(i + 1)
         sm, ieta, iphi = to_sm_ieta_iphi(i)
         p = [
-            to_eta_phi(sm, ieta - 0.5, iphi - 0.5),
-            to_eta_phi(sm, ieta - 0.5, iphi + 0.5),
-            to_eta_phi(sm, ieta + 0.5, iphi + 0.5),
-            to_eta_phi(sm, ieta + 0.5, iphi - 0.5)
+            to_eta_phi(sm, ieta - 0.5, iphi - 0.5, ieta),
+            to_eta_phi(sm, ieta - 0.5, iphi + 0.5, ieta),
+            to_eta_phi(sm, ieta + 0.5, iphi + 0.5, ieta),
+            to_eta_phi(sm, ieta + 0.5, iphi - 0.5, ieta),
+            to_eta_phi(sm, ieta - 0.5, iphi - 0.5, ieta)
         ]
-        x = array.array('d', [p[k][1] for k in range(4)])
-        y = array.array('d', [p[k][0] for k in range(4)])
-        root_histogram[-1].append(ROOT.TPolyLine(4, x, y))
-        root_histogram[-1][-1].SetFillColor(
-            root_histogram[-2][1].GetListOfFunctions().
-            FindObject('palette').GetValueColor(
-                root_histogram[root_histogram_index].
-                GetBinContent(i + 1)))
-        root_histogram[-1][-1].SetLineColor(ROOT.kBlack);
-        root_histogram[-1][-1].SetLineWidth(1);
-        root_histogram[-1][-1].Draw('f');
+        x = array.array('d', [p[k][1] for k in range(len(p))])
+        y = array.array('d', [p[k][0] for k in range(len(p))])
+        root_histogram[-1].append(ROOT.TPolyLine(len(p), x, y))
+        if content != 0:
+            u = content
+            if pad[pad_index].GetLogz() != 0 and u > 0:
+                u = math.log10(u)
+            u = max(root_histogram[0].GetMinimum(), min(
+                root_histogram[0].GetMaximum(), u))
+            color = palette.GetValueColor(u)
+            root_histogram[-1][-1].SetFillColor(color)
+        root_histogram[-1][-1].SetLineColor(ROOT.kGray)
+        root_histogram[-1][-1].SetLineWidth(1)
+        if content != 0:
+            root_histogram[-1][-1].Draw('f')
+        if outline:
+            root_histogram[-1][-1].Draw()
+        neta = sm >= 12 and sm < 18 and 32 or 48
+        nphi = sm in (10, 11, 18, 19) and 8 or 24
+        if ieta == 0 and iphi == 0:
+            # -0.5 .. neta - 0.5
+            y, x = to_eta_phi(
+                sm, -(offset_sm + 0.5) + (neta + 2 * offset_sm) *
+                (sm % 2),
+                0.5 * (nphi - 1))
+            root_histogram[-1].append(ROOT.TText(x, y, 'SM%d' % sm))
+            root_histogram[-1][-1].SetTextAlign(
+                sm % 2 == 0 and 21 or 23)
+            root_histogram[-1][-1].SetTextFont(42)
+            root_histogram[-1][-1].SetTextSize(text_size_sm)
+            root_histogram[-1][-1].Draw()
+            if sm % 2 == 1:
+                if nphi == 8:
+                    phi_list = 0, nphi - 1
+                else:
+                    phi_list = 0, 10, 20, nphi - 1
+                for phi in phi_list:
+                    y, x = to_eta_phi(
+                        sm, neta + offset_ieta_iphi[0], phi)
+                    root_histogram[-1].append(
+                        ROOT.TText(x, y, '%d' % phi))
+                    root_histogram[-1][-1].SetTextAlign(23)
+                    root_histogram[-1][-1].SetTextFont(42)
+                    root_histogram[-1][-1].SetTextSize(
+                        text_size_ieta_iphi)
+                    root_histogram[-1][-1].Draw()
+            if sm in (0, 1, 12, 13):
+                if neta == 32:
+                    eta_list = 0, 10, 20, neta - 1
+                else:
+                    eta_list = 0, 10, 20, 30, 40, neta - 1
+                for eta in eta_list:
+                    eta_shifted = eta
+                    if sm == 1 and eta == 0:
+                        eta_shifted += 0.5
+                    elif sm == 0 and eta == neta - 1:
+                        eta_shifted -= 0.5
+                    y, x = to_eta_phi(
+                        sm, eta_shifted, -offset_ieta_iphi[1])
+                    root_histogram[-1].append(
+                        ROOT.TText(x, y, '%d' % eta))
+                    root_histogram[-1][-1].SetTextAlign(32)
+                    root_histogram[-1][-1].SetTextFont(42)
+                    root_histogram[-1][-1].SetTextSize(
+                        text_size_ieta_iphi)
+                    root_histogram[-1][-1].Draw()
     canvas.Update()
 
-import os, sys
-sys.path.append(os.path.join(os.environ['ROOTSYS'], 'lib'))
-import math, array, random, ROOT
-
-application_name = ' '.join(sys.argv)
-set_root_style()
-canvas = ROOT.TCanvas(
-    'canvas%d' % 0, application_name, 1280 + 4, 500 + 33)
-canvas.SetLeftMargin(0.03125 * 1.5)
-canvas.SetRightMargin(0.03125 * 2.5)
-canvas.SetTopMargin(0.03125)
-pad_layout = ([1.3, 2.0], [1.0])
-pad = multipanel_pad(canvas, pad_layout)
-
-ncell = 17664
-
-root_histogram = []
-for i in range(1):
-    root_histogram.append(ROOT.TH1D(
-        'root_histogram%d' % len(root_histogram), '',
-        ncell, -0.5, ncell + 0.5))
-
-for i in range(ncell):
-    root_histogram[-1].Fill(i, random.uniform(0, 1))
-
-canvas.cd()
-for i in range(len(pad)):
-    pad[i].Draw()
-
-update(canvas, pad, root_histogram, 0)
-
-ROOT.gApplication.Run()
+if __name__ == '__main__':
+    import os, sys
+    sys.path.append(os.path.join(os.environ['ROOTSYS'], 'lib'))
+    import math, array, re, ROOT
+    application_name = ' '.join(sys.argv)
+    set_root_style()
+    canvas, pad = alice_emcal_canvas_pad(application_name)
+    ncell = 17664
+    root_histogram = []
+    log_z = False
+    filename_list = []
+    plot_range = None
+    for f in sys.argv[1:]:
+        if f in ('-l', '--log-z'):
+            log_z = True
+        elif f.find(':') != -1:
+            plot_range = map(float, f.split(':'))
+        else:
+            filename_list.append(f)
+    for filename in filename_list:
+        root_histogram.append(ROOT.TH1D(
+            'root_histogram%d' % len(root_histogram), '',
+            ncell, -0.5, ncell + 0.5))
+        f = open(filename, 'r')
+        line = f.readline()
+        while line != '':
+            line_split = re.sub(
+                ' +', ' ', re.sub(' *$', '', re.sub(
+                    '^ *', '', line[:-1]))).split(' ')
+            cell_id = int(line_split[0]) - 1
+            count = float(line_split[1])
+            root_histogram[-1].Fill(cell_id, count)
+            line = f.readline()
+        if filename != filename_list[0]:
+            root_histogram[0].Divide(root_histogram[0], root_histogram[-1])
+        if plot_range != None:
+            root_histogram[0].SetMinimum(plot_range[0])
+            root_histogram[0].SetMaximum(plot_range[1])
+    canvas.cd()
+    for i in range(len(pad)):
+        pad[i].Draw()
+        if log_z:
+            pad[i].SetLogz()
+    update(canvas, pad, root_histogram)
+    ROOT.gApplication.Run()

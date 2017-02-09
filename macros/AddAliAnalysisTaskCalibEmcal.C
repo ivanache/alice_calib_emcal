@@ -6,12 +6,16 @@ AliAnalysisTaskCalibEmcal *AddAliAnalysisTaskCalibEmcal(TString name = "AliAnaly
 	AliAnalysisTaskCalibEmcal *task =
 		new AliAnalysisTaskCalibEmcal(name.Data());
 
-	AliEMCALRecoUtils *reco_utils = task->GetEMCALRecoUtils();
+	AliEMCALRecoUtils *reco_util = task->GetEMCALRecoUtils();
   
 	gROOT->LoadMacro("$ALICE_PHYSICS/PWGPP/EMCAL/macros/ConfigureEMCALRecoUtils.C");
   
-	ConfigureEMCALRecoUtils(reco_utils, kFALSE, kTRUE, kTRUE,
+	ConfigureEMCALRecoUtils(reco_util, kFALSE, kTRUE, kTRUE,
 							kFALSE, kFALSE, kFALSE); 
+
+	reco_util->SetNumberOfCellsFromEMCALBorder(0);
+	reco_util->SwitchOnRecalibration();
+	reco_util->SwitchOnRunDepCorrection();
 
 	TString filename = mgr->GetCommonFileName();
 
