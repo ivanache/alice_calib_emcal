@@ -23,6 +23,8 @@ def factorized_model(hcount, hspectrum, bad_channel, gamma):
             count_iphi_2[sm][iphi_2] += 1
             mean_sm[sm] += content[i]
             count_sm[sm] += 1
+    #for loop over range(ncell) ends
+    
     for sm in range(nsm):
         for ieta in range(neta_max):
             if count_ieta[sm][ieta] > 0:
@@ -32,8 +34,15 @@ def factorized_model(hcount, hspectrum, bad_channel, gamma):
                 mean_iphi_2[sm][iphi_2] /= count_iphi_2[sm][iphi_2]
         if count_sm[sm] > 0:
             mean_sm[sm] /= count_sm[sm]
+    #for loop over range(nsm) ends
+
+    #Based on the current code, you can either print the warm cells or the caliration coeffs
     print_warm = False
+    print_coeffs = True
     function_inner = []
+
+    if print_coeffs:
+        file = open("lhc15o_list5_coeff.txt","w")
     for i in plot_cell_id + range(ncell):
         sm, ieta, iphi = paint_emcal.to_sm_ieta_iphi(i)
         eta, phi = paint_emcal.to_eta_phi(sm, ieta, iphi)
@@ -48,10 +57,13 @@ def factorized_model(hcount, hspectrum, bad_channel, gamma):
         if content[i] > 0:
             a = 0
             if print_warm:
-                if (not i in bad_channel_lhc15o_1.bad_all) and (content[i] - content_model) > 2500:
+                if (not i in bad_channel_lhc15o_5.bad_all) and (content[i] - content_model) > 500:
                     sys.stdout.write('%d, ' % i)
             elif content_model > 0:
-                a = (content_model / content[i])**(-1.0 / gamma)
+                a = (content_model / content[i])**(-1.0 / gamma) #a is set as the correction
+                if print_coeffs:
+                    print i, a
+                    file.write('%d\t%f\n' %(i, a))
                 if a != 0:
                     # scale_15_17, scale_17_20, scale_20_50 = [((a * r[1])**(gamma + 1) / (gamma + 1) - (a * r[0])**(gamma + 1) / (gamma + 1)) / (r[1]**(gamma + 1) / (gamma + 1) - r[0]**(gamma + 1) / (gamma + 1)) for r in ((1.5, 17), (1.7, 2.0), (2.0, 5.0))]
                     chi_square = []
@@ -89,8 +101,8 @@ def factorized_model(hcount, hspectrum, bad_channel, gamma):
                         if dof > 0:
                             s /= dof
                         chi_square.append(s)
-                    if chi_square[0] / chi_square[1] < 1 and i in bad_channel_lhc15o_1.bad_all:
-                        print i, i in bad_channel_lhc15o_1.bad_all and 1 or 0, i in bad_channel_lhc15o_mine.hot and 1 or 0, a, chi_square[0], chi_square[1], chi_square[0] / chi_square[1]
+                    if chi_square[0] / chi_square[1] < 1 and i in bad_channel_lhc15o_5.bad_all:
+                        #print i, i in bad_channel_lhc15o_5.bad_all and 1 or 0, i in bad_channel_lhc15o_mine5.hot and 1 or 0, a, chi_square[0], chi_square[1], chi_square[0] / chi_square[1]
                         #a = chi_square[0] / chi_square[1]
                         if a < 1.2 and chi_square[0] < 10:
                             a = 1
@@ -116,15 +128,19 @@ def factorized_model(hcount, hspectrum, bad_channel, gamma):
                         histogram_model[1].Draw('e1x0same')
                         canvas.Update()
                         ROOT.gApplication.Run()
-            content[i] = a
-        #content[i] = content_model
-        #content[i] = max(0, min(50, content[i]))
+        #content[i] = a
+        content[i] -= content_model
+        content[i] = max(-2200, min(2200, content[i]))
+    #for loop over  plot_cell_id + range(ncell) ends
     if print_warm:
         sys.stdout.write('\n')
+    if print_coeffs:
+        file.close()
     for i in range(ncell):
         hcount.SetBinContent(i + 1, content[i])
     return hcount
 
+#The main block
 if __name__ == '__main__':
     import os, sys
     sys.path.append(os.path.join(os.environ['ROOTSYS'], 'lib'))
@@ -132,19 +148,18 @@ if __name__ == '__main__':
     application_name = ' '.join(sys.argv)
     paint_emcal.set_root_style()
     log_z = False
-    filename_list = []
+    filename_list = []#Takes in all the input files
     plot_cell_id = []
+    #Takes in the system arguments
     for f in sys.argv[1:]:
-        if f in ('-l', '--log-z'):
+        if f in ('-l', '--log-z'):#Sets z axis to log
             log_z = True
-        elif re.compile('^[0-9]+$').match(f):
+        elif re.compile('^[0-9]+$').match(f):#checking for a histogram input
             plot_cell_id.append(int(f))
         else:
-            filename_list.append(f)
+            filename_list.append(f)#adding in file inputs
     if len(plot_cell_id) > 0:
-        canvas = canvas = ROOT.TCanvas(
-            'canvas%d' % 0, application_name,
-            800 + 4, 600 + 28)
+        canvas = canvas = ROOT.TCanvas('canvas%d' % 0, application_name,800 + 4, 600 + 28)
         pad = []
     else:
         canvas, pad = paint_emcal.alice_emcal_canvas_pad(application_name)
@@ -189,9 +204,10 @@ if __name__ == '__main__':
             h.GetYaxis().FindBin(5) - 1))
         #hpx.Divide(hpx_17_20, hpx_20_50)
         root_histogram[-1] = ROOT.TH1D(hpx)
-    import bad_channel_lhc15o_1
-    import bad_channel_lhc15o_mine
-    bad_all = sorted(bad_channel_lhc15o_1.bad_all + bad_channel_lhc15o_mine.hot)
+    import bad_channel_lhc15o_5
+    import bad_channel_lhc15o_mine5
+    #import lhc15o_list2_coeffs
+    bad_all = sorted(bad_channel_lhc15o_5.bad_all + bad_channel_lhc15o_mine5.hot)
     function = []
     hsumpy = None
     root_histogram_spectrum = []
@@ -224,3 +240,5 @@ if __name__ == '__main__':
             pad[i].SetLogz()
     paint_emcal.update(canvas, pad, root_histogram)
     ROOT.gApplication.Run()
+
+    
