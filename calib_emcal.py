@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-def factorized_model(hcount, hspectrum, bad_channel, gamma):
+def factorized_model(hcount, hspectrum, bad_channel, gamma,hChi):
     ncell = hcount.GetNbinsX()
     content = [hcount.GetBinContent(i + 1) for i in range(ncell)]
     neta_max = 48
@@ -36,13 +36,15 @@ def factorized_model(hcount, hspectrum, bad_channel, gamma):
             mean_sm[sm] /= count_sm[sm]
     #for loop over range(nsm) ends
 
-    #Based on the current code, you can either print the warm cells or the caliration coeffs
     print_warm = False
-    print_coeffs = True
+    print_coeffs = False
+    print_chis = True
     function_inner = []
 
     if print_coeffs:
         file = open("lhc15o_list5_coeff.txt","w")
+    if print_chis:
+        file_chi = open("lhc15o_newList1_chiBeforeAfter.txt","w")
     for i in plot_cell_id + range(ncell):
         sm, ieta, iphi = paint_emcal.to_sm_ieta_iphi(i)
         eta, phi = paint_emcal.to_eta_phi(sm, ieta, iphi)
@@ -57,7 +59,7 @@ def factorized_model(hcount, hspectrum, bad_channel, gamma):
         if content[i] > 0:
             a = 0
             if print_warm:
-                if (not i in bad_channel_lhc15o_5.bad_all) and (content[i] - content_model) > 500:
+                if (not i in bad_channel_lhc15o_2_3.bad_all) and (content[i] - content_model) > 2000:
                     sys.stdout.write('%d, ' % i)
             elif content_model > 0:
                 a = (content_model / content[i])**(-1.0 / gamma) #a is set as the correction
@@ -78,9 +80,8 @@ def factorized_model(hcount, hspectrum, bad_channel, gamma):
                             a1 = 1
                         s = 0
                         dof = 0
-                        for j in range(
-                                hspectrum[i].GetXaxis().FindBin(1.5 / a1),
-                                hspectrum[i].GetXaxis().FindBin(5 / a1) + 1):
+                        for j in range(hspectrum[i].GetXaxis().FindBin(1.5 / a1),
+                                       hspectrum[i].GetXaxis().FindBin(5 / a1) + 1):
                             content_bin = hspectrum[i].GetBinContent(j)
                             # content_model_bin = content_model * (hspectrum[i].GetXaxis().GetBinLowEdge(j + 1)**(gamma + 1) / (gamma + 1) - hspectrum[i].GetXaxis().GetBinLowEdge(j)**(gamma + 1) / (gamma + 1)) / (hspectrum[i].GetXaxis().GetBinLowEdge(hspectrum[i].GetXaxis().FindBin(5 / a1) + 1)**(gamma + 1) / (gamma + 1) - hspectrum[i].GetXaxis().GetBinLowEdge(hspectrum[i].GetXaxis().FindBin(1.5 / a1))**(gamma + 1) / (gamma + 1))
                             # content_model_bin_orig = content_model * (hspectrum[i].GetXaxis().GetBinLowEdge(j + 1)**(gamma + 1) / (gamma + 1) - hspectrum[i].GetXaxis().GetBinLowEdge(j)**(gamma + 1) / (gamma + 1)) / (hspectrum[i].GetXaxis().GetBinLowEdge(hspectrum[i].GetXaxis().FindBin(5) + 1)**(gamma + 1) / (gamma + 1) - hspectrum[i].GetXaxis().GetBinLowEdge(hspectrum[i].GetXaxis().FindBin(1.5))**(gamma + 1) / (gamma + 1))
@@ -101,8 +102,14 @@ def factorized_model(hcount, hspectrum, bad_channel, gamma):
                         if dof > 0:
                             s /= dof
                         chi_square.append(s)
-                    if chi_square[0] / chi_square[1] < 1 and i in bad_channel_lhc15o_5.bad_all:
-                        #print i, i in bad_channel_lhc15o_5.bad_all and 1 or 0, i in bad_channel_lhc15o_mine5.hot and 1 or 0, a, chi_square[0], chi_square[1], chi_square[0] / chi_square[1]
+
+                    hChi[0].Fill(chi_square[0])
+                    hChi[1].Fill(chi_square[1])
+                       
+                    print i, i in bad_channel_lhc15o_2_3.bad_all and 1 or 0, i in bad_channel_lhc15o_mine2_3.hot1 and 1 or 0, a, chi_square[0], chi_square[1]
+                    if print_chis:
+                        file_chi.write("%d %d %d %f %f %f\n" %(i, i in bad_channel_lhc15o_2_3.bad_all and 1 or 0, i in bad_channel_lhc15o_mine2_3.hot1 and 1 or 0, a, chi_square[0], chi_square[1])) 
+                    if chi_square[0] / chi_square[1] < 1 and i in bad_channel_lhc15o_2_3.bad_all:
                         #a = chi_square[0] / chi_square[1]
                         if a < 1.2 and chi_square[0] < 10:
                             a = 1
@@ -130,8 +137,10 @@ def factorized_model(hcount, hspectrum, bad_channel, gamma):
                         ROOT.gApplication.Run()
         #content[i] = a
         content[i] -= content_model
-        content[i] = max(-2200, min(2200, content[i]))
+        content[i] = max(-2000, min(2000, content[i]))
     #for loop over  plot_cell_id + range(ncell) ends
+    if print_chis:
+        file_chi.close()
     if print_warm:
         sys.stdout.write('\n')
     if print_coeffs:
@@ -173,14 +182,13 @@ if __name__ == '__main__':
 
     root_histogram = []
     for i in range(1):
-        root_histogram.append(ROOT.TH1D(
-            'root_histogram%d' % len(root_histogram), '',
-            ncell, -0.5, ncell + 0.5))
+        root_histogram.append(ROOT.TH1D('root_histogram%d' % len(root_histogram), '',ncell, -0.5, ncell + 0.5))
+
+    
     hsum = None
     for filename in filename_list:
         f = ROOT.TFile.Open(filename)
-        h = f.Get('AliAnalysisTaskCalibEmcal').Get(
-            'histogram').FindObject('_histogram_cell_id_amplitude')
+        h = f.Get('AliAnalysisTaskCalibEmcal').Get('histogram').FindObject('_histogram_cell_id_amplitude')
         if hsum == None:
             hsum = ROOT.TH2D(h)
         else:
@@ -204,11 +212,18 @@ if __name__ == '__main__':
             h.GetYaxis().FindBin(5) - 1))
         #hpx.Divide(hpx_17_20, hpx_20_50)
         root_histogram[-1] = ROOT.TH1D(hpx)
-    import bad_channel_lhc15o_5
-    import bad_channel_lhc15o_mine5
+    import bad_channel_lhc15o_2_3
+    import bad_channel_lhc15o_mine2_3
     #import lhc15o_list2_coeffs
-    bad_all = sorted(bad_channel_lhc15o_5.bad_all + bad_channel_lhc15o_mine5.hot)
+    bad_all = sorted(bad_channel_lhc15o_2_3.bad_all + bad_channel_lhc15o_mine2_3.hot1)
     function = []
+
+    root_histogram_chiHists = []
+    #hist at 0 is calibrated chi_sqr
+    #hist at 1 is uncalibrated chi_sqr
+    for i in range(2):
+        root_histogram_chiHists.append(ROOT.TH1D('root_histogram_chiHists%d' % len(root_histogram), '', 10000, -0.5, 9999.5))
+
     hsumpy = None
     root_histogram_spectrum = []
     for i in range(ncell):
@@ -218,8 +233,7 @@ if __name__ == '__main__':
                 hsumpy = ROOT.TH1D(root_histogram_spectrum[-1])
             else:
                 hsumpy.Add(root_histogram_spectrum[-1])
-    function.append(ROOT.TF1(
-        'function%d' % len(function), 'exp([0])*x^[1]', 1.5, 5))
+    function.append(ROOT.TF1('function%d' % len(function), 'exp([0])*x^[1]', 1.5, 5))
     function[-1].SetParameter(0, 1)
     function[-1].SetParameter(1, -4)
     for i in range(1, hsumpy.GetNbinsX()):
@@ -232,7 +246,7 @@ if __name__ == '__main__':
 
     #bad_all = bad_channel_lhc15o_1.bad_all
     # if pad[0] == None: sys.exit(1)
-    root_histogram[-1] = factorized_model(root_histogram[-1], root_histogram_spectrum, bad_all, function[-1].GetParameter(1))
+    root_histogram[-1] = factorized_model(root_histogram[-1], root_histogram_spectrum, bad_all, function[-1].GetParameter(1),root_histogram_chiHists)
     canvas.cd()
     for i in range(len(pad)):
         pad[i].Draw()
