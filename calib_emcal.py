@@ -44,22 +44,20 @@ def factorized_model(hcount, hspectrum, bad_channel, gamma,hChi):
     if print_coeffs:
         file = open("lhc15o_list5_coeff.txt","w")
     if print_chis:
-        file_chi = open("lhc15o_newList1_chiBeforeAfter.txt","w")
+        file_chi = open("lhc15o_all_new_chiBeforeAfter.txt","w")
     for i in plot_cell_id + range(ncell):
         sm, ieta, iphi = paint_emcal.to_sm_ieta_iphi(i)
         eta, phi = paint_emcal.to_eta_phi(sm, ieta, iphi)
-        # n(ieta, iphi) ~ m(ieta) * m(iphi) / m
+       # n(ieta, iphi) ~ m(ieta) * m(iphi) / m
         content_model = 0
         if mean_sm[sm] > 0:
-            content_model = mean_ieta[sm][ieta] * \
-                            mean_iphi_2[sm][iphi + nphi_max * (ieta % 2)] / \
-                            mean_sm[sm]
+            content_model = mean_ieta[sm][ieta] * mean_iphi_2[sm][iphi + nphi_max * (ieta % 2)] / mean_sm[sm]#The average energy you expect for the cell for the super module.
         # if i not in bad_channel and content[i] > 0 and content_model > 0:
         #     print (content_model / content[i])**(1.0 / 5.0), ','
         if content[i] > 0:
             a = 0
             if print_warm:
-                if (not i in bad_channel_lhc15o_2_3.bad_all) and (content[i] - content_model) > 2000:
+                if (not i in bad_channel_lhc15o_all_new.bad_all) and (content[i] - content_model) > 2200:
                     sys.stdout.write('%d, ' % i)
             elif content_model > 0:
                 a = (content_model / content[i])**(-1.0 / gamma) #a is set as the correction
@@ -86,7 +84,7 @@ def factorized_model(hcount, hspectrum, bad_channel, gamma,hChi):
                             # content_model_bin = content_model * (hspectrum[i].GetXaxis().GetBinLowEdge(j + 1)**(gamma + 1) / (gamma + 1) - hspectrum[i].GetXaxis().GetBinLowEdge(j)**(gamma + 1) / (gamma + 1)) / (hspectrum[i].GetXaxis().GetBinLowEdge(hspectrum[i].GetXaxis().FindBin(5 / a1) + 1)**(gamma + 1) / (gamma + 1) - hspectrum[i].GetXaxis().GetBinLowEdge(hspectrum[i].GetXaxis().FindBin(1.5 / a1))**(gamma + 1) / (gamma + 1))
                             # content_model_bin_orig = content_model * (hspectrum[i].GetXaxis().GetBinLowEdge(j + 1)**(gamma + 1) / (gamma + 1) - hspectrum[i].GetXaxis().GetBinLowEdge(j)**(gamma + 1) / (gamma + 1)) / (hspectrum[i].GetXaxis().GetBinLowEdge(hspectrum[i].GetXaxis().FindBin(5) + 1)**(gamma + 1) / (gamma + 1) - hspectrum[i].GetXaxis().GetBinLowEdge(hspectrum[i].GetXaxis().FindBin(1.5))**(gamma + 1) / (gamma + 1))
                             content_model_bin = content_model * (hspectrum[i].GetXaxis().GetBinLowEdge(j + 1)**(gamma + 1) / (gamma + 1) - hspectrum[i].GetXaxis().GetBinLowEdge(j)**(gamma + 1) / (gamma + 1)) / (hspectrum[i].GetXaxis().GetBinLowEdge(hspectrum[i].GetXaxis().FindBin(5 / a1) + 1)**(gamma + 1) / (gamma + 1) - hspectrum[i].GetXaxis().GetBinLowEdge(hspectrum[i].GetXaxis().FindBin(1.5 / a1))**(gamma + 1) / (gamma + 1))
-                            content_model_bin_orig = content_model * (hspectrum[i].GetXaxis().GetBinLowEdge(j + 1)**(gamma + 1) / (gamma + 1) - hspectrum[i].GetXaxis().GetBinLowEdge(j)**(gamma + 1) / (gamma + 1)) / ((5 / a1)**(gamma + 1) / (gamma + 1) - (1.5 / a1)**(gamma + 1) / (gamma + 1))
+                            #content_model_bin_orig = content_model * (hspectrum[i].GetXaxis().GetBinLowEdge(j + 1)**(gamma + 1) / (gamma + 1) - hspectrum[i].GetXaxis().GetBinLowEdge(j)**(gamma + 1) / (gamma + 1)) / ((5 / a1)**(gamma + 1) / (gamma + 1) - (1.5 / a1)**(gamma + 1) / (gamma + 1))
                             if len(plot_cell_id) >= 1 and i == plot_cell_id[0]:
                                 if ia1 == 0:
                                     histogram_model[0].SetBinContent(j, content_model_bin)
@@ -95,9 +93,7 @@ def factorized_model(hcount, hspectrum, bad_channel, gamma,hChi):
                             if content_bin > 0:
                                 # if len(plot_cell_id) >= 1:
                                 #     print i, ia1, a1, j, hspectrum[i].GetBinCenter(j), content_bin, content_model_bin, content_model_bin_orig
-                                s += (content_bin -
-                                               content_model_bin)**2 / \
-                                    content_bin
+                                s += (content_bin - content_model_bin)**2 /  content_bin
                                 dof += 1
                         if dof > 0:
                             s /= dof
@@ -106,10 +102,10 @@ def factorized_model(hcount, hspectrum, bad_channel, gamma,hChi):
                     hChi[0].Fill(chi_square[0])
                     hChi[1].Fill(chi_square[1])
                        
-                    print i, i in bad_channel_lhc15o_2_3.bad_all and 1 or 0, i in bad_channel_lhc15o_mine2_3.hot1 and 1 or 0, a, chi_square[0], chi_square[1]
+                    print i, i in bad_channel_lhc15o_all_new.bad_all and 1 or 0, i in bad_channel_lhc15o_mine_all_new.hot and 1 or 0, a, chi_square[0], chi_square[1]
                     if print_chis:
-                        file_chi.write("%d %d %d %f %f %f\n" %(i, i in bad_channel_lhc15o_2_3.bad_all and 1 or 0, i in bad_channel_lhc15o_mine2_3.hot1 and 1 or 0, a, chi_square[0], chi_square[1])) 
-                    if chi_square[0] / chi_square[1] < 1 and i in bad_channel_lhc15o_2_3.bad_all:
+                        file_chi.write("%d %d %d %f %f %f\n" %(i, i in bad_channel_lhc15o_all_new.bad_all and 1 or 0, i in bad_channel_lhc15o_mine_all_new.hot and 1 or 0, a, chi_square[0], chi_square[1])) 
+                    if chi_square[0] / chi_square[1] < 1 and i in bad_channel_lhc15o_all_new.bad_all:
                         #a = chi_square[0] / chi_square[1]
                         if a < 1.2 and chi_square[0] < 10:
                             a = 1
@@ -137,7 +133,7 @@ def factorized_model(hcount, hspectrum, bad_channel, gamma,hChi):
                         ROOT.gApplication.Run()
         #content[i] = a
         content[i] -= content_model
-        content[i] = max(-2000, min(2000, content[i]))
+        content[i] = max(-2200, min(2200, content[i]))
     #for loop over  plot_cell_id + range(ncell) ends
     if print_chis:
         file_chi.close()
@@ -149,6 +145,11 @@ def factorized_model(hcount, hspectrum, bad_channel, gamma,hChi):
         hcount.SetBinContent(i + 1, content[i])
     return hcount
 
+###############################################################################################################################################################################################################################
+###############################################################################################################################################################################################################################
+###############################################################################################################################################################################################################################
+###############################################################################################################################################################################################################################
+###############################################################################################################################################################################################################################
 #The main block
 if __name__ == '__main__':
     import os, sys
@@ -180,11 +181,13 @@ if __name__ == '__main__':
     #         print i
     # sys.exit(0)
 
+    #Create a 1D histogram
     root_histogram = []
     for i in range(1):
         root_histogram.append(ROOT.TH1D('root_histogram%d' % len(root_histogram), '',ncell, -0.5, ncell + 0.5))
 
-    
+        
+    #Obtain the 2D histogram which contents cell_id on x and energy on y from the AnalysisResults.root
     hsum = None
     for filename in filename_list:
         f = ROOT.TFile.Open(filename)
@@ -193,37 +196,31 @@ if __name__ == '__main__':
             hsum = ROOT.TH2D(h)
         else:
             hsum.Add(h)
-        hpx = ROOT.TH1D(h.ProjectionX(
-            'hpx',
-            h.GetYaxis().FindBin(1.5),
-            h.GetYaxis().FindBin(5) - 1))
+        hpx = ROOT.TH1D(h.ProjectionX('hpx',h.GetYaxis().FindBin(1.5),h.GetYaxis().FindBin(5) - 1))
         print h.GetYaxis().FindBin(1.7), h.GetYaxis().FindBin(2)
-        hpx_15_17 = ROOT.TH1D(h.ProjectionX(
-            'hpx',
-            h.GetYaxis().FindBin(1.5),
-            h.GetYaxis().FindBin(1.7) - 1))
-        hpx_17_20 = ROOT.TH1D(h.ProjectionX(
-            'hpx',
-            h.GetYaxis().FindBin(1.7),
-            h.GetYaxis().FindBin(2) - 1))
-        hpx_20_50 = ROOT.TH1D(h.ProjectionX(
-            'hpx',
-            h.GetYaxis().FindBin(2),
-            h.GetYaxis().FindBin(5) - 1))
+        hpx_15_17 = ROOT.TH1D(h.ProjectionX('hpx',h.GetYaxis().FindBin(1.5),h.GetYaxis().FindBin(1.7) - 1))
+        hpx_17_20 = ROOT.TH1D(h.ProjectionX('hpx',h.GetYaxis().FindBin(1.7),h.GetYaxis().FindBin(2) - 1))
+        hpx_20_50 = ROOT.TH1D(h.ProjectionX('hpx',h.GetYaxis().FindBin(2)  ,h.GetYaxis().FindBin(5) - 1))
         #hpx.Divide(hpx_17_20, hpx_20_50)
         root_histogram[-1] = ROOT.TH1D(hpx)
-    import bad_channel_lhc15o_2_3
-    import bad_channel_lhc15o_mine2_3
+
+
+    #importing the bad channel lists
+    import bad_channel_lhc15o_all_new
+    import bad_channel_lhc15o_mine_all_new
     #import lhc15o_list2_coeffs
-    bad_all = sorted(bad_channel_lhc15o_2_3.bad_all + bad_channel_lhc15o_mine2_3.hot1)
+    bad_all = sorted(bad_channel_lhc15o_all_new.bad_all + bad_channel_lhc15o_mine_all_new.hot)#list of all bad and hot channels for the run set
     function = []
 
+    #histograms to obtaina  chisqr distribution
     root_histogram_chiHists = []
     #hist at 0 is calibrated chi_sqr
     #hist at 1 is uncalibrated chi_sqr
     for i in range(2):
         root_histogram_chiHists.append(ROOT.TH1D('root_histogram_chiHists%d' % len(root_histogram), '', 10000, -0.5, 9999.5))
 
+
+    #Getting the energies from the cell_amplitude histogram
     hsumpy = None
     root_histogram_spectrum = []
     for i in range(ncell):
@@ -233,13 +230,18 @@ if __name__ == '__main__':
                 hsumpy = ROOT.TH1D(root_histogram_spectrum[-1])
             else:
                 hsumpy.Add(root_histogram_spectrum[-1])
+
+    #The power law fitting function
     function.append(ROOT.TF1('function%d' % len(function), 'exp([0])*x^[1]', 1.5, 5))
     function[-1].SetParameter(0, 1)
     function[-1].SetParameter(1, -4)
+
+    #Fitting the power law to the sum of spectrum in all the good channels.
     for i in range(1, hsumpy.GetNbinsX()):
         hsumpy.SetBinContent(i, hsumpy.GetBinContent(i) / hsumpy.GetXaxis().GetBinWidth(i))
         hsumpy.SetBinError(i, hsumpy.GetBinError(i) / hsumpy.GetXaxis().GetBinWidth(i))
     hsumpy.Fit(function[-1], 'r0')
+    
     # for i in range(hsumpy.GetXaxis().FindBin(1.5),
     #                hsumpy.GetXaxis().FindBin(5)):
     #     print i, hsumpy.GetXaxis().GetBinCenter(i), hsumpy.GetBinContent(i)
@@ -247,6 +249,7 @@ if __name__ == '__main__':
     #bad_all = bad_channel_lhc15o_1.bad_all
     # if pad[0] == None: sys.exit(1)
     root_histogram[-1] = factorized_model(root_histogram[-1], root_histogram_spectrum, bad_all, function[-1].GetParameter(1),root_histogram_chiHists)
+    
     canvas.cd()
     for i in range(len(pad)):
         pad[i].Draw()
