@@ -36,15 +36,15 @@ def factorized_model(hcount, hspectrum, bad_channel, gamma,hChi):
             mean_sm[sm] /= count_sm[sm]
     #for loop over range(nsm) ends
 
-    print_warm = False
+    print_warm = True
     print_coeffs = False
-    print_chis = True
+    print_chis = False
     function_inner = []
 
     if print_coeffs:
         file = open("lhc15o_list5_coeff.txt","w")
     if print_chis:
-        file_chi = open("lhc15o_all_new_chiBeforeAfter.txt","w")
+        file_chi = open("lhc15o_2_new_chiBeforeAfter.txt","w")
     for i in plot_cell_id + range(ncell):
         sm, ieta, iphi = paint_emcal.to_sm_ieta_iphi(i)
         eta, phi = paint_emcal.to_eta_phi(sm, ieta, iphi)
@@ -57,7 +57,7 @@ def factorized_model(hcount, hspectrum, bad_channel, gamma,hChi):
         if content[i] > 0:
             a = 0
             if print_warm:
-                if (not i in bad_channel_lhc15o_all_new.bad_all) and (content[i] - content_model) > 2200:
+                if (not i in bad_channel_lhc15o_2_new.bad_all) and (content[i] - content_model) > 2200:
                     sys.stdout.write('%d, ' % i)
             elif content_model > 0:
                 a = (content_model / content[i])**(-1.0 / gamma) #a is set as the correction
@@ -102,12 +102,16 @@ def factorized_model(hcount, hspectrum, bad_channel, gamma,hChi):
                     hChi[0].Fill(chi_square[0])
                     hChi[1].Fill(chi_square[1])
                        
-                    print i, i in bad_channel_lhc15o_all_new.bad_all and 1 or 0, i in bad_channel_lhc15o_mine_all_new.hot and 1 or 0, a, chi_square[0], chi_square[1]
+                    print i, i in bad_channel_lhc15o_2_new.bad_all and 1 or 0, i in bad_channel_lhc15o_mine_2_new.hot and 1 or 0, a, chi_square[0], chi_square[1]
+
                     if print_chis:
-                        file_chi.write("%d %d %d %f %f %f\n" %(i, i in bad_channel_lhc15o_all_new.bad_all and 1 or 0, i in bad_channel_lhc15o_mine_all_new.hot and 1 or 0, a, chi_square[0], chi_square[1])) 
-                    if chi_square[0] / chi_square[1] < 1 and i in bad_channel_lhc15o_all_new.bad_all:
-                        #a = chi_square[0] / chi_square[1]
-                        if a < 1.2 and chi_square[0] < 10:
+                        file_chi.write("%d %d %d %f %f %f\n" %(i, i in bad_channel_lhc15o_2_new.bad_all and 1 or 0, i in bad_channel_lhc15o_mine_2_new.hot and 1 or 0, a, chi_square[0], chi_square[1])) 
+
+                    
+                    if chi_square[0] / chi_square[1] < 1 and i in bad_channel_lhc15o_2_new.bad_all:
+                        #a = chi_square[0] / chi_square[1]    
+                        #if a < 1.5 and chi_square[0] < 20:
+                        if chi_square[0] < 10:
                             a = 1
                         else:
                             a = 2
@@ -131,6 +135,7 @@ def factorized_model(hcount, hspectrum, bad_channel, gamma,hChi):
                         histogram_model[1].Draw('e1x0same')
                         canvas.Update()
                         ROOT.gApplication.Run()
+        #print a
         #content[i] = a
         content[i] -= content_model
         content[i] = max(-2200, min(2200, content[i]))
@@ -206,10 +211,10 @@ if __name__ == '__main__':
 
 
     #importing the bad channel lists
-    import bad_channel_lhc15o_all_new
-    import bad_channel_lhc15o_mine_all_new
+    import bad_channel_lhc15o_2_new
+    import bad_channel_lhc15o_mine_2_new
     #import lhc15o_list2_coeffs
-    bad_all = sorted(bad_channel_lhc15o_all_new.bad_all + bad_channel_lhc15o_mine_all_new.hot)#list of all bad and hot channels for the run set
+    bad_all = sorted(bad_channel_lhc15o_2_new.bad_all + bad_channel_lhc15o_mine_2_new.hot)#list of all bad and hot channels for the run set
     function = []
 
     #histograms to obtaina  chisqr distribution
