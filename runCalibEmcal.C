@@ -4,7 +4,7 @@
 #define RUN_PERIOD(x, y) ((x) << 5) + ((y) - 'a')
 
 void runCalibEmcal(const char *run_mode = "full",
-				   const int lhc_run_period = RUN_PERIOD(15, 'o'))
+				   const int lhc_run_period = RUN_PERIOD(16, 'q'))
 {
 	gROOT->ProcessLine(".include $ROOTSYS/include");
 	gROOT->ProcessLine(".include $ALICE_ROOT/include");
@@ -155,6 +155,34 @@ void runCalibEmcal(const char *run_mode = "full",
 		-1
 	};
 
+	const int run_number_lhc16q[] = {
+	  
+	  /*265525, 265521, 265501, 265500, 265499, 265435, 265427,
+		265426, 265425, 265424, 265422, 265421, 265420, 265419,
+		265388, 265387, 265384, 265383, 265378, 265344, 265343,
+		265342, 265339, 265338, 265336, 265335, 265334, 265332,
+		265309,*/
+
+		265435, 265427, 265426, 265425, 265424, 265422, 265421,
+		265420, 265419, 265388, 265387, 265384, 265383, 265378,
+		265344, 265343, 265342, 265339, 265338, 265336, 265335,
+		265334, 265332, 265331, 265309,
+	  
+		-1
+	};
+
+	const int run_number_lhc17p[] = {
+	  
+	        282343, 282342, 282341, 282340, 282314, 282313, 282312,
+		282307, 282306, 282305, 282304, 282303, 282302, 282247,
+		282230, 282229, 282227, 282224, 282206, 282189, 282147,
+		282146, 282127, 282126, 282125, 282123, 282122, 282119,
+		282118, 282099, 282098, 282078, 282051, 282031, 282030,
+		282025,
+	  
+		-1
+	};
+
 	const int *run_number;
 
 	plugin->SetGridDataDir(Form(
@@ -194,7 +222,17 @@ void runCalibEmcal(const char *run_mode = "full",
 		plugin->SetDataPattern("muon_calo_pass1/*/AliESDs.root");
 		run_number = run_number_lhc16h;
 		break;
+	case RUN_PERIOD(16, 'q'):
+	        plugin->SetDataPattern("muon_calo_pass1/*/AliESDs.root");
+		run_number = run_number_lhc16q;
+		break;
+	case RUN_PERIOD(17, 'p'):
+	        plugin->SetDataPattern("muon_calo_pass1/*/AliESDs.root");
+		run_number = run_number_lhc17h;
+		break;
+
 	}
+	
 
 	for (const int *r = run_number; *r != -1; r++) {
 		plugin->AddRunNumber(*r);
